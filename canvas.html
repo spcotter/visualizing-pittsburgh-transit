@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>All the Buses</title>
+<!-- jruby -run -e httpd . -p 9090 -->
+
+  <script src="//code.jquery.com/jquery-1.12.1.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+  <script src="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+  <script src="./L.CanvasOverlay.js"></script>
+  <script src="./L.D3SvgOverlay.min.js"></script>
+
+  <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+
+<style>
+
+  body {
+    padding: 0;
+    margin: 0;
+  }
+
+  html, body, #map {
+    height: 100%;
+    width: 100%;
+  }
+
+  #time {
+    position: absolute;
+    top: 1px;
+    left: 50px;
+  }
+
+  #current-time {
+    color: black;
+    font-size: 28px;
+  }
+
+  #hour, #minute, #period {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    color: black;
+    display: inline;
+    width: 50px;
+    text-align: center;
+    background-color: white;
+  }
+
+
+  #active-trips {
+    color: #666;
+    font-size: 16px;
+  }
+
+  #speed {
+    position: absolute;
+    top: 65px;
+    right: 27px;
+  }
+
+  #speed input[type=range][orient=vertical]{
+      writing-mode: bt-lr; /* IE */
+      -webkit-appearance: slider-vertical; /* WebKit */
+      width: 8px;
+      height: 150px;
+      padding: 0 5px;
+  }
+
+  #running {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 8px;
+  }
+
+
+  #blurb {
+    position: absolute;
+    width: 100%;
+    bottom: 0px;
+    left: 0px;
+    font-size: 16px;
+    background-color: white;
+    padding: 8px;
+    opacity: 0.6;
+  }
+
+  .routes {
+    opacity: 0.3;
+  }
+
+  .route {
+    fill: none;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+</style>
+
+<body>
+
+
+  <div id="map"></div>
+
+  <div id="time">
+    <div id="current-time">
+      <select class="form-control current-time" id="hour">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected="true">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+      </select>
+      <select class="form-control current-time" id="minute">
+        <option value="0">00</option>
+        <option value="1">01</option>
+        <option value="2">02</option>
+        <option value="3">03</option>
+        <option value="4">04</option>
+        <option value="5">05</option>
+        <option value="6">06</option>
+        <option value="7">07</option>
+        <option value="8">08</option>
+        <option value="9">09</option>
+        <option value="10">10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+        <option value="13">13</option>
+        <option value="14">14</option>
+        <option value="15">15</option>
+        <option value="16">16</option>
+        <option value="17">17</option>
+        <option value="18">18</option>
+        <option value="19">19</option>
+        <option value="20">20</option>
+        <option value="21">21</option>
+        <option value="22">22</option>
+        <option value="23">23</option>
+        <option value="24">24</option>
+        <option value="25">25</option>
+        <option value="26">26</option>
+        <option value="27">27</option>
+        <option value="28">28</option>
+        <option value="29">29</option>
+        <option value="30">30</option>
+        <option value="31">31</option>
+        <option value="32">32</option>
+        <option value="33">33</option>
+        <option value="34">34</option>
+        <option value="35">35</option>
+        <option value="36">36</option>
+        <option value="37">37</option>
+        <option value="38" selected="true">38</option>
+        <option value="39">39</option>
+        <option value="40">40</option>
+        <option value="41">41</option>
+        <option value="42">42</option>
+        <option value="43">43</option>
+        <option value="44">44</option>
+        <option value="45">45</option>
+        <option value="46">46</option>
+        <option value="47">47</option>
+        <option value="48">48</option>
+        <option value="49">49</option>
+        <option value="50">50</option>
+        <option value="51">51</option>
+        <option value="52">52</option>
+        <option value="53">53</option>
+        <option value="54">54</option>
+        <option value="55">55</option>
+        <option value="56">56</option>
+        <option value="57">57</option>
+        <option value="58">58</option>
+        <option value="59">59</option>
+      </select>
+      <select class="form-control current-time" id="period">
+        <option value="AM" selected="true">AM</option>
+        <option value="PM">PM</option>
+      </select>
+      <div id="active-trips">0 active trips</div>
+    </div>
+  </div>
+
+  <div id="running">
+    <button id="run" class="btn btn-small btn-default"><i class="fa fa-stop"></i></button>
+  </div>
+
+  <div id="speed">
+    <input id="speed-slider" orient="vertical" type="range" min="0" max="300" step="10" value="290"/>
+  </div>
+
+  <div id="blurb">
+    <a href="www.portauthority.org" target="_blank">Port Authority of Allegheny County</a> serves 207,238 riders on the average weekday, making over 6,500 trips.<br/><span style="font-size: 12px;">Weekday Service, January to March 2016</span>
+  </div>
+
+
+
+  <script>
+    // request frame polyfill;
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              function( callback ){
+                window.setTimeout(callback, 1000 / 60);
+              };
+    })();
+
+
+    var map = new L.Map('map', {
+            center: [40.449690349293654, -79.96192932128906], 
+            zoom: 11
+          }),
+        tileLayer = new L.TileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png');
+
+    tileLayer.setOpacity(0.3);
+
+    map.addLayer(tileLayer);
+
+    map._initPathRoot();
+
+
+    queue()
+      .defer(d3.json, 'routes.json')
+      .defer(d3.json, 'interpolated_positions1m.json')
+      .await(function(error, routes, data) { 
+        if (error) throw error;
+
+        var colors = {
+                0: "rgba(102,102,102,1)",
+                B: "rgba(70,130,180,1)",
+                Y: "rgba(254,196,79,1)",
+                P: "rgba(117,107,177,1)",
+                G: "rgba(44,162,95,1)",
+                O: "rgba(217,95,14,1)",
+                R: "rgba(240,59,32,1)",
+                D: "rgba(0,0,0,1)",
+                M: "rgba(0,0,0,1)"
+              };
+
+        // SVG layer for routes.
+        var svg = L.d3SvgOverlay(function(selection, projection){
+
+          var routes_g = selection.selectAll('.routes');
+          if(routes_g.empty()){
+            routes_g = selection.append('g')
+              .attr('class','routes')
+
+            var route_paths = routes_g.selectAll('path')
+              .data(routes.features);
+
+            route_paths.enter().append('path')
+              .attr('class', 'route')
+              .attr('d', d3.geo.path()
+                  .projection(function(l){
+                    var p = projection.latLngToLayerPoint({ lon: l[0], lat:  l[1] });
+                    return [p.x,p.y];
+                  })
+                )
+              .attr('stroke', function(d){
+                 
+                  return colors[d.properties.route_id.substr(0,1)];
+                });
+          }
+
+        });
+
+        svg.addTo(map);
+
+
+       
+        var times = Object.keys(data.positions),
+            active_trips = 0,
+            active_trips_div = d3.select('#active-trips'),
+            current_time_h = $('#hour'),
+            current_time_m = $('#minute'),
+            current_time_p = $('#period');
+
+        window.current_index = 37;
+        window.start_time = data.start_time;
+
+       
+        var interpolate = function(p1, p2, f){
+                var nx = p1[0] + ( p2[0] - p1[0] ) * f,
+                    ny = p1[1] + ( p2[1] - p1[1] ) * f;
+                return [nx, ny];
+              },
+            m_to_h = function (c) {
+                var h = Math.floor(c / 60) % 24,
+                    m = c % 60,
+                    p = h < 12 ? 'AM' : 'PM',
+                    h = h % 12 == 0 ? 12 : h % 12;
+                return { h: h, m: m, p: p };
+              };
+
+
+        // Most browsers will animate the canvas at 60 fps or an update every 16.67 ms.
+        // We'll slow things down a little more by adding 10 frames between minutes.
+
+        window.running = true;
+        window.timeout = 10;
+        window.frame = 0;
+        window.dot_size = 2.5;
+
+
+        // Canvas Draying
+        window.draw = function(){
+          var context = params.canvas.getContext('2d'),
+              frame_count = window.params.zoom - 6;
+
+          context.clearRect(0, 0, params.canvas.width, params.canvas.height);
+
+          var trips_t1 = data.positions[ times[current_index] ],
+              trips_t2 = data.positions[ times[current_index + 1] ],
+              f = frame / frame_count,
+              trip_keys = Object.keys(trips_t1);
+
+          active_trips = trip_keys.length;
+
+          trip_keys.forEach(function(t){
+            // Lat and long are switched in this map? 
+            if(trips_t2[t]){
+              var d = interpolate( trips_t1[t], trips_t2[t], f),
+                  dot = canvasOverlay._map.latLngToContainerPoint(d);
+
+              context.fillStyle = colors[ t.split('.')[1] ];
+              context.beginPath();
+              context.arc(dot.x, dot.y, window.params.zoom - 9 + 1, 0, Math.PI * 2);
+              context.fill();
+              context.lineWidth = 0.5;
+              context.strokeStyle = '#FFFFFF';
+              context.stroke();
+              context.closePath();
+            }
+           
+          });
+
+
+          frame = (frame + 1) % frame_count;
+
+          if(frame == 0){
+            current_index += 1;
+            active_trips_div.text( active_trips + ' active trips' );
+            
+            var t = m_to_h( data.start_time + current_index );
+
+            current_time_h.val(t.h);
+            current_time_m.val(t.m);
+            current_time_p.val(t.p);
+          }
+
+          if(running && current_index < (times.length - 1)){
+            setTimeout(function(){
+              requestAnimationFrame(draw);
+            }, timeout);
+          }
+        };
+
+
+
+        var drawingOnCanvas = function(canvasOverlay, params) {
+          window.canvasOverlay = canvasOverlay;
+          window.params = params;
+          draw();
+        };
+
+
+        L.canvasOverlay()
+          .drawing(drawingOnCanvas)
+          .addTo(map);
+
+      });
+
+
+      // UI Controls 
+      $(document).on('input change', '#speed', function(e){
+        var slider = $('#speed-slider'),
+            max = +slider.prop('max'),
+            val = +slider.val();
+
+        window.timeout = max - val;
+      });
+
+
+      $(document).on('click', '#run', function(){
+        var icon = window.running ? 'play' : 'stop';
+        window.running = !window.running;
+
+        $('#run').html('<i class="fa fa-' + icon + '"></i>')
+        if(window.running){
+          draw();
+        }
+      });
+
+
+      $(document).on('change', '.current-time', function(e){
+        var restart = false;
+        if(window.running){
+          restart = true
+          window.running = false;
+        }
+
+        var h = +$('#hour').val(),
+            m = +$('#minute').val(),
+            p = $('#period').val();
+
+        if(p == 'AM' && h == 12){
+          h = 0;
+        } else if(p == 'PM'){
+          h = (h + 12) % 24
+        }
+
+        window.current_index = (h * 60 + m - window.start_time) % 1440;
+        draw();
+
+        if(restart){
+          window.running = true;
+        }
+      }); 
+
+  </script>

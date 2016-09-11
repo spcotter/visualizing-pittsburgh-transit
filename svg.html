@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- jruby -run -e httpd . -p 9090 -->
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+  <script src="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+  <script src="./L.D3SvgOverlay.min.js"></script>
+
+  <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+
+<style>
+
+ body {
+      padding: 0;
+      margin: 0;
+  }
+  html, body, #map {
+      height: 100%;
+      width: 100%;
+  }
+
+  #title {
+    color: black;
+    position: absolute;
+    top: 20px;
+    left: 60px;
+    font-size: 36px;
+  }
+
+  #subtitle {
+    color: #999;
+    position: absolute;
+    top: 65px;
+    left: 60px;
+    font-size: 20px;
+  }
+
+  #time {
+    color: red;
+    position: absolute;
+    top: 20px;
+    right: 60px;
+    font-size: 36px;
+    text-align:right;
+  }
+
+  #active-trips {
+    color: black;
+    position: absolute;
+    top: 65px;
+    right: 60px;
+    font-size: 20px;
+    text-align:right;
+  }
+
+  #blurb {
+    position: absolute;
+    bottom: 20px;
+    left: 60px;
+    font-size: 18px;
+  }
+
+  .bus {
+    /*opacity: 0.75;*/
+    stroke: white;
+    stroke-width: 0.5;
+  }
+
+  .routes {
+    opacity: 0.25;
+  }
+
+  .route {
+    fill: none;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+</style>
+
+<body id="app">
+
+
+  <div id="map"></div>
+  <div id="title">Port Authority - All the Buses</div>
+  <div id="subtitle">Weekday Service, January to March 2016</div>
+  <div id="time">03:00</div>
+  <div id="active-trips">0 active trips</div>
+  <div id="blurb"><a href="www.portauthority.org" target="_blank">Port Authority</a> serves 207,238 riders on the average weekday, making over 6,649 trips.</div>
+
+
+  <script>
+    window.map = new L.Map('map', {
+        center: [40.449690349293654, -79.96192932128906], 
+        zoom: 11
+      }),
+    window.tileLayer = new L.TileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png');
+
+    window.tileLayer.setOpacity(0.3);
+
+    map.addLayer(tileLayer);
+
+    map._initPathRoot();
+
+    queue()
+      .defer(d3.json, 'routes.json')
+      .defer(d3.json, 'positions1m.json')
+      .await(function(error, routes, positions) { 
+        if (error) throw error;
+
+
+        var times = Object.keys(positions),
+            total_trips = 0;
+
+
+        window.current_index = 29;
+        window.last_index = times.length - 1;
+
+        window.svg_overlay = L.d3SvgOverlay(function(selection, projection){
+
+          var routes_g = selection.selectAll('.routes');
+          if(routes_g.empty()){
+            routes_g = selection.append('g')
+              .attr('class','routes')
+
+            var route_paths = routes_g.selectAll('path')
+              .data(routes.features);
+
+            route_paths.enter().append('path')
+              .attr('class', 'route')
+              .attr('d', d3.geo.path()
+                  .projection(function(l){
+                    var p = projection.latLngToLayerPoint({ lon: l[0], lat:  l[1] });
+                    return [p.x,p.y];
+                  })
+                )
+              .attr('stroke', function(d){
+                  var colors = {
+                    0: '#666666',
+                    B: 'steelblue',
+                    Y: 'yellow',
+                    P: 'purple',
+                    G: 'green',
+                    O: 'orange',
+                    R: 'red',
+                    D: 'black',
+                    M: 'black',
+                  };
+                  return colors[d.properties.route_id.substr(0,1)];
+                });
+          }
+
+          var t = times[window.current_index];
+          d3.select('#time').text(t);
+
+          var bus_dots = selection.selectAll('circle')
+                .data(positions[t], function(d){
+                  return d[1];
+                });
+
+
+          total_trips += bus_dots.enter().size();
+          total_trips -= bus_dots.exit().size();
+          d3.select('#active-trips').text(total_trips + ' active trips');
+
+          var translate = function(d){
+              var p = projection.latLngToLayerPoint({ lon: d[2], lat:  d[3] });
+              return 'translate(' + p.x + ',' + p.y + ')';
+          }
+
+          bus_dots.enter().append('circle')
+            .attr('class', function(d){
+              return 'bus ' + 'route-' + d[0];
+            })
+            .attr('r', 3.5)
+            .attr('transform', translate)
+            .attr('fill', function(d){
+              var colors = {
+                0: '#666666',
+                B: 'steelblue',
+                Y: 'yellow',
+                P: 'purple',
+                G: 'green',
+                O: 'orange',
+                R: 'red',
+                D: 'black',
+                M: 'black',
+              };
+              return colors[d[0].substr(0,1)];
+            });
+
+
+          bus_dots.transition()
+            .duration(300)
+            .ease("linear")
+            .attr('transform', translate);
+
+          bus_dots.exit().remove();
+        });
+
+
+
+        window.interval = setInterval(function(){
+          window.current_index += 1;
+          svg_overlay.draw();
+
+          if(window.current_index == window.last_index){
+            clearInterval(window.interval);
+          }
+        }, 300);
+
+        window.svg_overlay.addTo(map);
+
+      });
+  </script>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<!-- jruby -run -e httpd . -p 9090 -->
+
+  <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
+  <script src="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+  <script src="./L.D3SvgOverlay.min.js"></script>
+
+  <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+
+
+<style>
+
+ body {
+      padding: 0;
+      margin: 0;
+  }
+  html, body, #map {
+      height: 100%;
+      width: 100%;
+  }
+
+  #title {
+    color: black;
+    position: absolute;
+    top: 20px;
+    left: 60px;
+    font-size: 26px;
+  }
+
+  .route {
+    opacity: 1;
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke: red;
+  }
+
+</style>
+
+<body>
+
+  <div id="map"></div>
+  <div id="title">Port Authority Bus Routes</div>
+
+
+  <script>
+
+    // TaivfKriPcQBKu9GjBe5FBeUK
+
+
+    window.map = new L.Map('map', {
+        center: [40.449690349293654, -79.96192932128906], 
+        zoom: 11
+      }),
+    window.tileLayer = new L.TileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png');
+
+    window.tileLayer.setOpacity(0.6);
+    map.addLayer(tileLayer);
+
+    map._initPathRoot();
+
+    queue()
+      .defer(d3.json, 'routes.json')
+      .await(function(error, routes) { 
+        if (error) throw error;
+
+        var svg_overlay = L.d3SvgOverlay(function(selection, projection){
+
+          var route_paths = selection.selectAll('path')
+              .data(routes.features);
+
+          route_paths.enter().append('path')
+            .attr('class', 'route')
+            .attr("d", d3.geo.path()
+                .projection(function(location){
+                  return [
+                    projection.latLngToLayerPoint(
+                      { lon: location[0], lat:  location[1] }
+                    ).x,
+                    projection.latLngToLayerPoint(
+                      { lon: location[0], lat:  location[1] }
+                    ).y,
+                  ];
+                })
+              );
+
+          route_paths.exit()
+            .remove();
+        });
+
+        svg_overlay.addTo(map);
+
+      });
+  </script>
