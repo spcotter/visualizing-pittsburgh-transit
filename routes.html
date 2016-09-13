@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<!-- jruby -run -e httpd . -p 9090 -->
-
+  <meta charset="utf-8">
+  <title>Port Authority Routes</title>
+  
   <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/queue-async/1.0.7/queue.min.js"></script>
@@ -32,12 +32,11 @@
   }
 
   .route {
-    opacity: 1;
+    opacity: 0.75;
     fill: none;
     stroke-width: 2;
     stroke-linejoin: round;
     stroke-linecap: round;
-    stroke: red;
   }
 
 </style>
@@ -45,7 +44,7 @@
 <body>
 
   <div id="map"></div>
-  <div id="title">Port Authority Bus Routes</div>
+  <div id="title">Port Authority Routes</div>
 
 
   <script>
@@ -69,25 +68,51 @@
       .await(function(error, routes) { 
         if (error) throw error;
 
+        window.routes = routes;
+
+        var colors = {
+                0: "rgba(102,102,102,1)",
+                B: "rgba(70,130,180,1)",
+                Y: "rgba(254,196,79,1)",
+                P: "rgba(117,107,177,1)",
+                G: "rgba(44,162,95,1)",
+                O: "rgba(217,95,14,1)",
+                R: "rgba(240,59,32,1)",
+                D: "rgba(0,0,0,1)",
+                M: "rgba(0,0,0,1)"
+              };
+
         var svg_overlay = L.d3SvgOverlay(function(selection, projection){
 
           var route_paths = selection.selectAll('path')
               .data(routes.features);
 
           route_paths.enter().append('path')
-            .attr('class', 'route')
-            .attr("d", d3.geo.path()
-                .projection(function(location){
-                  return [
-                    projection.latLngToLayerPoint(
-                      { lon: location[0], lat:  location[1] }
-                    ).x,
-                    projection.latLngToLayerPoint(
-                      { lon: location[0], lat:  location[1] }
-                    ).y,
-                  ];
-                })
-              );
+              .attr('class', 'route')
+              .attr('d', d3.geo.path()
+                  .projection(function(l){
+                    var p = projection.latLngToLayerPoint({ lon: l[0], lat:  l[1] });
+                    return [p.x,p.y];
+                  })
+                )
+              .attr('stroke', function(d){
+                  return colors[d.properties.route_id.substr(0,1)];
+                });
+
+          // route_paths.enter().append('path')
+          //   .attr('class', 'route')
+          //   .attr("d", d3.geo.path()
+          //       .projection(function(location){
+          //         return [
+          //           projection.latLngToLayerPoint(
+          //             { lon: location[0], lat:  location[1] }
+          //           ).x,
+          //           projection.latLngToLayerPoint(
+          //             { lon: location[0], lat:  location[1] }
+          //           ).y,
+          //         ];
+          //       })
+          //     );
 
           route_paths.exit()
             .remove();
