@@ -1,6 +1,8 @@
-All the Buses
+Visualizing Pittsburgh Transit
 =============
 ## Pittsburgh Transit Data Visualization
+
+This repository uses [Port Authority's GTFS data](http://www.portauthority.org/paac/CompanyInfoProjects/DeveloperResources.aspx) to create an animation of all buses during the day.
 
 SQL for the GTFS data:
 

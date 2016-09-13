@@ -1,5 +1,5 @@
 var fs = require('fs');
-var directory = '/Users/stevecotter/GitHub/scotter.github.io/all-the-buses'
+var directory = '~/GitHub/visualizing-pittsburgh-transit';
 var positions1m = JSON.parse(fs.readFileSync(directory + '/positions1m.json', 'utf8'));
 
 var minutes = Object.keys(positions1m),

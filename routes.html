@@ -99,23 +99,7 @@
                   return colors[d.properties.route_id.substr(0,1)];
                 });
 
-          // route_paths.enter().append('path')
-          //   .attr('class', 'route')
-          //   .attr("d", d3.geo.path()
-          //       .projection(function(location){
-          //         return [
-          //           projection.latLngToLayerPoint(
-          //             { lon: location[0], lat:  location[1] }
-          //           ).x,
-          //           projection.latLngToLayerPoint(
-          //             { lon: location[0], lat:  location[1] }
-          //           ).y,
-          //         ];
-          //       })
-          //     );
-
-          route_paths.exit()
-            .remove();
+          route_paths.exit().remove();
         });
 
         svg_overlay.addTo(map);

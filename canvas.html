@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>All the Buses</title>
-<!-- jruby -run -e httpd . -p 9090 -->
+<title>Visualizing Pittsburgh Transit</title>
 
   <script src="//code.jquery.com/jquery-1.12.1.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
@@ -87,7 +86,7 @@
   }
 
   .routes {
-    opacity: 0.3;
+    opacity: 0.4;
   }
 
   .route {
@@ -222,7 +221,7 @@
           }),
         tileLayer = new L.TileLayer('http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png');
 
-    tileLayer.setOpacity(0.3);
+    tileLayer.setOpacity(0.6);
 
     map.addLayer(tileLayer);
 
@@ -267,7 +266,6 @@
                   })
                 )
               .attr('stroke', function(d){
-                 
                   return colors[d.properties.route_id.substr(0,1)];
                 });
           }
@@ -315,7 +313,7 @@
         // Canvas Draying
         window.draw = function(){
           var context = params.canvas.getContext('2d'),
-              frame_count = window.params.zoom - 6;
+              frame_count = window.frame_count ? window.frame_count : (window.params.zoom - 6) * 2;
 
           context.clearRect(0, 0, params.canvas.width, params.canvas.height);
 
@@ -327,7 +325,7 @@
           active_trips = trip_keys.length;
 
           trip_keys.forEach(function(t){
-            // Lat and long are switched in this map? 
+            // Lat and long are switched in this Leaflet. Good times.
             if(trips_t2[t]){
               var d = interpolate( trips_t1[t], trips_t2[t], f),
                   dot = canvasOverlay._map.latLngToContainerPoint(d);
