@@ -1,4 +1,4 @@
-All the Buses
+Visualizing Pittsburgh Transit
 =============
 ## Pittsburgh Transit Data Visualization
 
