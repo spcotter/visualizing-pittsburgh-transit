@@ -3,6 +3,7 @@ Visualizing Pittsburgh Transit
 ## Pittsburgh Transit Data Visualization
 
 [Live demo.](https://spcotter.github.io/visualizing-pittsburgh-transit/)
+[Medium post describing the visualization.](https://medium.com/@cottermedian/visualizing-pittsburgh-transit-1ab05664b8b3#.ludjfqr90)
 
 This repository uses [Port Authority's GTFS data](http://www.portauthority.org/paac/CompanyInfoProjects/DeveloperResources.aspx) to create an animation of all buses during the day.
 
